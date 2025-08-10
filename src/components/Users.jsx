@@ -228,7 +228,7 @@ function Users() {
                 </ul>
             </nav>
             </div>
-            {/* right section */}
+            {/* right section(form) */}
 
             <div className="w-1/3 bg-white">
             <form action="">
