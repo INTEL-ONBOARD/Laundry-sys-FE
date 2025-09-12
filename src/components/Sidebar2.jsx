@@ -1,23 +1,37 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 import { ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const Sidebar2 = () => {
+    const [userRole, setUserRole] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
+    
+    useEffect(() => {
+        // Get user data from localStorage when component mounts
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        setUserRole(userData.userRole || '');
+    }, []);
 
-    const navLinks = [
-        { to: '/dashboard/home', label: 'Dashboard' },
-        { to: '/dashboard/faq', label: 'FAQ Service' },
-        { to: '/dashboard/orders', label: 'Orders' },
-        { to: '/dashboard/packages', label: 'Packages' },
-        { to: '/dashboard/reports', label: 'Reports' },
-        { to: '/dashboard/sales', label: 'Sales' },
-        { to: '/dashboard/settings', label: 'Settings' },
-        { to: '/dashboard/users', label: 'Users' },
+    // Define all possible navigation links with their required roles
+    const allNavLinks = [
+        { to: '/dashboard/home', label: 'Dashboard', roles: ['admin', 'manager', 'guest'] },
+        { to: '/dashboard/faq', label: 'FAQ Service', roles: ['admin', 'manager', 'guest', 'cashier'] },
+        { to: '/dashboard/orders', label: 'Orders', roles: ['admin', 'manager', 'cashier'] },
+        { to: '/dashboard/packages', label: 'Packages', roles: ['admin', 'manager'] },
+        { to: '/dashboard/reports', label: 'Reports', roles: ['admin', 'manager'] },
+        { to: '/dashboard/sales', label: 'Sales', roles: ['admin', 'manager'] },
+        { to: '/dashboard/settings', label: 'Settings', roles: ['admin', 'manager'] },
+        { to: '/dashboard/users', label: 'Users', roles: ['admin', 'manager'] },
     ];
 
+    // Filter navigation links based on user role
+    const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
+
     const handleLogout = () => {
+        // Clear user data from localStorage on logout
+        localStorage.removeItem('userData');
         navigate('/signin');
     };
 
@@ -39,31 +53,40 @@ const Sidebar2 = () => {
             <aside id="cta-button-sidebar"
                 className="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
                 aria-label="Sidebar">
-                <div className="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-[#70008C] flex flex-col justify-between">
+                <div className="h-full px-3 py-4 overflow-y-auto dark:bg-[#70008C] flex flex-col justify-between">
 
                     <div>
                         <div className="sidebar-header text-white mb-5 p-4">
                             <h2 className="text-2xl font-bold">LMS</h2>
                             <p className="text-sm">Laundry Management System</p>
+                            <p className="text-xs mt-2 bg-purple-800 px-2 py-1 rounded-md inline-block">
+                                Role: {userRole}
+                            </p>
                             <hr className="custom-divider my-4" />
                         </div>
 
                         <ul className="space-y-2 font-medium text-white">
-                            {navLinks.map(({ to, label }) => {
-                                const isActive = location.pathname === to;
-                                return (
-                                    <li key={to}>
-                                        <Link
-                                            to={to}
-                                            className={`flex justify-between items-center px-4 py-2 rounded transition-colors duration-200 
-                                                ${isActive ? 'bg-purple-700' : 'hover:bg-purple-700'}`}
-                                        >
-                                            <span>{label}</span>
-                                            <ChevronRight className={`w-4 h-4 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
-                                        </Link>
-                                    </li>
-                                );
-                            })}
+                            {navLinks.length > 0 ? (
+                                navLinks.map(({ to, label }) => {
+                                    const isActive = location.pathname === to;
+                                    return (
+                                        <li key={to}>
+                                            <Link
+                                                to={to}
+                                                className={`flex justify-between items-center px-4 py-2 rounded transition-colors duration-200 
+                                                    ${isActive ? 'bg-purple-700' : 'hover:bg-purple-700'}`}
+                                            >
+                                                <span>{label}</span>
+                                                <ChevronRight className={`w-4 h-4 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+                                            </Link>
+                                        </li>
+                                    );
+                                })
+                            ) : (
+                                <li className="text-center text-gray-300 py-4">
+                                    No menu items available for your role
+                                </li>
+                            )}
                         </ul>
                     </div>
 

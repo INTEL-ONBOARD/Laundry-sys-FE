@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -16,23 +16,21 @@ const SignIn = () => {
 
     try {
       const response = await axios.post(
-        `https://lms-system-9a515d1462cd.herokuapp.com/api/users/login`,
-        null, // No request body, since data goes in query string
+        'https://lms-backend-project-ft6t.onrender.com/api/users/login',
         {
-          params: {
-            email: email,
-            password: password
-          }
+          username: username,
+          password: password
         }
       );
 
-      if (response.status === 200) {
-        // Success - navigate to dashboard
+      if (response.data.status === "success") {
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(response.data.data));
         navigate('/dashboard/home');
       }
     } catch (error) {
-      if (error.response?.status === 400) {
-        setErrorMsg('Invalid email or password.');
+      if (error.response?.status === 401) {
+        setErrorMsg('Invalid username or password.');
       } else {
         setErrorMsg('An error occurred. Please try again later.');
       }
@@ -58,18 +56,18 @@ const SignIn = () => {
 
           <form className="space-y-6" onSubmit={handleLogin}>
 
-            {/* Email */}
+            {/* Username */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                Email address
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                Username
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                placeholder="example@gmail.com"
+                placeholder="Enter your username"
                 className="input-field"
               />
             </div>
@@ -85,7 +83,7 @@ const SignIn = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 className="input-field"
               />
             </div>

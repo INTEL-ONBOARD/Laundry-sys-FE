@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import axios from 'axios';
 function Users() {
-
+    
     const [users, setUsers] = useState([]);
     //to store the data of the add user modal till submit
     const [formData, setFormData] = useState({     // Price info state
@@ -11,56 +11,17 @@ function Users() {
         password: '',
         email: '',
         bio: '',
-        role: '', //admin, gurest, cashier, manager
+        role: '', //admin, guest, cashier, manager
         active: true,
         profile: null
     });
 
-    const loadUser = (user) => {
-        setIsUserCreating(false);
-        setFormData({
-        id: 123,
-        fullName: 'Alice',
-        password: '',
-        email: 'alice@example.com',
-        bio: 'Hello!',
-        role: 'adimin', //admin, gurest, cashier, manager
-        active: false,
-        profile: null
-        });
-    }
-
-    // Handler for add price info form changes
-    const handleAddUserInputChange = (e) => {
-        const { name, value} = e.target;
-        setFormData({ ...formData, [name]: value });
-        console.log('input change triggered')
-    };
-
-    const handleClearformData = () => {        // Handler to clear user info textfields inside modal 
-      console.log("clear user info triggered");
-      setFormData({
-        id: null,
-        fullName: '',
-        //fix this
-        role: '',
-        active: '',
-        email: ''
-      });
-    };
-
-    // const [loading, setLoading] = useState(true);
-    // const [error, setError] = useState('');
-
-    const [isUserCreating, setIsUserCreating] = useState(true); //state for edit price modal
-
-  useEffect(() => {
-    const controller = new AbortController();
-
+    //const controller = new AbortController();
     async function fetchUsers() {
+      setTableLoading(true);
       try {
         // axios supports AbortController via the "signal" option
-        const res = await axios.get('https://lms-backend-project-ft6t.onrender.com/api/users/', { signal: controller.signal });
+        const res = await axios.get('https://lms-backend-project-ft6t.onrender.com/api/users/', /*{ signal: controller.signal }*/);
         
         setUsers(res.data.data);
         // raw response info
@@ -84,35 +45,156 @@ function Users() {
           // network / other errors
           console.error('Error fetching users:', err.message || err);
         }
+      } finally{
+        setTableLoading(false);
       }
     }
 
+  useEffect(() => {
+    
     fetchUsers();
 
     // cleanup: abort the request if the component unmounts
-    return () => controller.abort();
+    //return () => controller.abort();
   }, []);
 
-  // Add a new price
-  const handleCreateUser = async (formData) => {
-    try {
-      console.log(formData.username+" user created");
-      //await registerUser(formData);
-      //setAddPriceModalOpen(false);
-      //loadPriceList();
-      //handleClearInfo();
-    } catch (error) {
-      console.error('Error creating user:', error);
-    }
-  };
 
-    const handleUpdateUser = async (formData) => {
-    try {
-      console.log(formData.username+" user updated");
-    } catch (error) {
-      console.error('Error creating user:', error);
+    const loadUser = (user) => {
+      console.log(user);
+        setIsUserCreating(false);
+        setFormData({
+        id: user._id,
+        fullName: user.username,
+        password: user.password,
+        email: user.email,
+        bio: user.bio,
+        role: user.userRole, // typo kept by wenuja //admin, gurest, cashier, manager
+        active: user.isActive,
+        profile: user.profilePicture,
+        });
     }
-  };
+
+    const createUser = async () => {
+      setFormLoading(true);
+      //do the validation here
+      try {
+        console.log(formData);
+        const res = await axios.post(
+          'https://lms-backend-project-ft6t.onrender.com/api/users',
+          {
+            username: formData.fullName,
+            password: formData.password,
+            email: formData.email,
+            userROle: formData.role, // typo intentionally kept from wenuja
+            isActive: formData.active,
+            profilePicture: formData.profile,
+            bio: formData.bio,
+          }
+        );
+        fetchUsers();
+
+        console.log('HTTP status:', res.status);
+        if(res.status==true){
+          console.log("user created");
+        handleClearformData();
+        }
+        console.log('Response data:', res.data);
+      } catch (err) {
+        if (err.response) {
+          console.error('Server responded with error:', err.response.status, err.response.data, err.message);
+        } else {
+          console.error('Request error:', err.message || err);
+        }
+      } finally{
+        setFormLoading(false);
+      }
+    };
+
+    const updateUser = async () => {
+      setFormLoading(true);
+      //do the validation here
+      try {
+        console.log(formData);
+        console.log(formData);
+        const res = await axios.put(
+          `https://lms-backend-project-ft6t.onrender.com/api/users/${formData.id}`,
+          // `https://lms-backend-project-ft6t.onrender.com/api/users/6898682dee9a5333e805f261`,
+          {
+            username: "namal",
+            password: "Namal@12345",
+            email: "namal@email.com",
+            userROle: "Guest", // typo intentionally kept from wenuja
+            isActive: true,
+            profilePicture: "image.com",
+            bio: "this is the bio",
+          }
+        );
+        fetchUsers();
+
+        console.log('HTTP status:', res.status);
+        if(res.status==true){
+          console.log("user created");
+          handleClearformData();
+        }
+        console.log('Response data:', res.data);
+      } catch (err) {
+        if (err.response) {
+          console.error('Server responded with error:', err.response.status, err.response.data, err.message);
+        } else {
+          console.error('Request error:', err.message || err);
+        }
+      }finally{
+        setFormLoading(false);
+      }
+    };
+
+
+        const deleteUser = async (userId) => {
+      //do the validation here
+      try {
+        console.log("user id: "+userId);
+        const res = await axios.delete(
+          //`https://lms-backend-project-ft6t.onrender.com/api/users/${formData.id}`,
+          `https://lms-backend-project-ft6t.onrender.com/api/users/${userId}`);
+          
+          console.log('delete HTTP status:', res.status);
+          console.log('delete Response data:', res.data);
+          fetchUsers();
+      } catch (err) {
+        if (err.response) {
+          console.error('Server responded with error:', err.response.status, err.response.data, err.message);
+        } else {
+          console.error('Request error:', err.message || err);
+        }
+      }
+    };
+
+    // Handler for add price info form changes
+    const handleAddUserInputChange = (e) => {
+      const { name, value} = e.target;
+      console.log(name+': '+value)
+        setFormData({ ...formData, [name]: value });
+    };
+
+    const handleClearformData = () => {        // Handler to clear user info textfields inside modal 
+      console.log("clear user info triggered");
+      setFormData({
+        id: null,
+        fullName: '',
+        password: '',
+        email: '',
+        bio: '',
+        role: '', //admin, guest, cashier, manager
+        active: true,
+        profile: '',
+      });
+    };
+
+    const [tableLoading, setTableLoading] = useState(true);
+    const [formLoading, setFormLoading] = useState(false);
+    // const [error, setError] = useState('');
+    const [isUserCreating, setIsUserCreating] = useState(true); //state for edit price modal
+
 
     //const [roleFilter, setRoleFilter] = useState('All');
     // const handleRoleFilterChange = (e) => {
@@ -158,51 +240,76 @@ function Users() {
                         <th scope="col" className="px-6 py-3">Action</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {users.map(user => (
-<tr
-            key={user._id ?? user.id}                     // use correct id field
-            onClick={() => loadUser(user)}
-            onKeyDown={(e) => {
-              // make Enter or Space activate the row (keyboard accessible)
-              if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-                e.preventDefault();
-                loadUser(user);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            className="bg-white border-b hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300"
-          >
-            <td className="w-4 p-4">
-              <div className="flex items-center">
-                <input
-                  id={`checkbox-table-search-${user._id ?? user.id}`}
-                  type="checkbox"
-                  className="w-4 h-4"
-                  onClick={(e) => e.stopPropagation()} // prevent row click when toggling checkbox
-                />
+<tbody>
+        {tableLoading ? (
+          // Spinner row that spans all columns
+          <tr>
+            <td colSpan={7} className="py-8 text-center">
+              <div role="status" aria-live="polite" className="inline-flex items-center gap-3">
+                <svg
+                  className="w-6 h-6 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span>Loading...</span>
               </div>
             </td>
+          </tr>
+        ) : (
+          users.map((user, index) => (
+            <tr
+              key={user._id ?? user.id}
+              onClick={() => loadUser(user)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                  e.preventDefault();
+                  loadUser(user);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              className="bg-white border-b hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300"
+            >
+              <td className="w-4 p-4">
+                <div className="flex items-center">
+                  <input
+                    id={`checkbox-table-search-${user._id ?? user.id}`}
+                    type="checkbox"
+                    className="w-4 h-4"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </td>
 
-            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-              {user._id ?? user.id}
-            </th>
-            <td className="px-6 py-4">{user.username}</td>
-            <td className="px-6 py-4">{user.userRole}</td>
-            <td className="px-6 py-4">{user.active ? 'Active' : 'Unavailable'}</td>
-            <td className="px-6 py-4">{user.email}</td>
-            <td className="px-6 py-4">
-              <button
-                type="button"
-                onClick={(e) => handleDelete(user._id ?? user.id, e)}
-                className="font-medium text-blue-600 mx-3 hover:underline"
-              >
-                Delete
-              </button>
-            </td>
-          </tr>                    ))}
-                </tbody>
+              <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                {index + 1}
+              </th>
+
+              <td className="px-6 py-4">{user.username}</td>
+              <td className="px-6 py-4">{user.userRole}</td>
+              <td className="px-6 py-4">{user.active ? 'Active' : 'Unavailable'}</td>
+              <td className="px-6 py-4">{user.email}</td>
+              <td className="px-6 py-4">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteUser(user.id);
+                  }}
+                  className="font-medium text-blue-600 mx-3 hover:underline"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
             </table>
 
             <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4 my-5" aria-label="Table navigation">
@@ -231,12 +338,30 @@ function Users() {
             {/* right section(form) */}
 
             <div className="w-1/3 bg-white">
+
+{formLoading ? (
+          // Spinner row that spans all columns
+              <div role="status" aria-live="polite" className="inline-flex items-center gap-3">
+                <svg
+                  className="w-6 h-6 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span>Loading...</span>
+              </div>
+        ) : (
+
             <form action="">
             <label className="block text-gray-500 mb-1">Name</label>
                 <input
                     type="text"
                     name="fullName"
-                    className="mb-3 w-full p-2 rounded-md bg-gray-50 border-gray-50 border border-gray-200 p-3 text-gray-900  focus:border-1 focus:border-purple-500"
+                    className="mb-3 w-full rounded-md bg-gray-50 border-gray-50 border p-3 text-gray-900  focus:border-1 focus:border-purple-500"
                     placeholder="Enter employee name"
                     value={formData.fullName}
                     onChange={handleAddUserInputChange}
@@ -256,9 +381,9 @@ function Users() {
                         <select
                             id="role"
                             name="role"
-                            // value={role}
+                            value={formData.role}
                             onChange={handleAddUserInputChange}
-                            className="mb-3 w-full p-2 text-gray-200 rounded-md bg-gray-50 border-gray-50 border border-gray-200 p-3 text-gray-900 focus:border-1 focus:border-purple-500"
+                            className="mb-3 w-full p-2 text-gray-200 rounded-md bg-gray-50 border-gray-50 border p-3 text-gray-900 focus:border-1 focus:border-purple-500"
                             >
                             <option value="" disabled>
                                 Select a Role
@@ -272,9 +397,9 @@ function Users() {
                 <span className='w-1/2 '>
                 <label className="block text-gray-500 mb-1">Status</label>
                         <select
-                            id="status"
-                            name="status"
-                            // value={role}
+                            id="active"
+                            name="active"
+                            value={formData.active}
                             onChange={handleAddUserInputChange}
                             className="mb-3 w-full p-2 text-gray-200 rounded-md bg-gray-50 border-gray-50 border border-gray-200 p-3 text-gray-900 focus:border-1 focus:border-purple-500"
                             >
@@ -291,19 +416,29 @@ function Users() {
                 <input
                     type="password"
                     name="password"
-                    className="mb-3 w-full p-2 rounded-md bg-gray-50 border-gray-50 border border-gray-200 p-3 text-gray-900  focus:border-1 focus:border-purple-500"
+                    className="mb-3 w-full rounded-md bg-gray-50 border-gray-50 border p-3 text-gray-900  focus:border-1 focus:border-purple-500"
                     placeholder="Enter employee password"
                     value={formData.password}
                     onChange={handleAddUserInputChange}
                     />
 
-                <div className='w-full flex justify-end gap-6 mt-8'>
+            <label className="block text-gray-500 mb-1">Bio</label>
+                <textarea
+                  name="bio"
+                  rows={3}
+                  className="mb-3 w-full rounded-md bg-gray-50 border border-gray-200 p-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter employee name"
+                  value={formData.bio}
+                  onChange={handleAddUserInputChange}
+                />
+
+                <div className='w-full flex justify-end gap-6 mt-2'>
                 <button
                 type="button"
                 className="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2"
                 onClick={(e) => {
                     //e.preventDefault(); // optional
-                    isUserCreating ? handleCreateUser(e) : handleUpdateUser(e);
+                    isUserCreating ? createUser() : updateUser();
                 }}
                 >
                 {isUserCreating ? 'Create User' : 'Update User'}
@@ -326,6 +461,7 @@ function Users() {
 
                 </div>
             </form>
+                    )}
             </div>
             </div>
         </div>
